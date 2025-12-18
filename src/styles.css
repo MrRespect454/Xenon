@@ -1,4 +1,45 @@
 /* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 
-html, body { height: 100%; }
+/*html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+/* Xenon Theme */
+
+:root {
+  --xenon-primary: #1976d2;
+  --xenon-secondary: #2196f3;
+  --xenon-accent: #ff4081;
+  --xenon-warn: #f44336;
+  --xenon-dark: #0F0B33;
+  --xenon-light: #F8F9FF;
+  --xenon-gradient: linear-gradient(135deg, #1976d2 0%, #2196f3 100%);
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  background-color: #fafafa;
+}
+
+/* Material customizations */
+.mat-primary {
+  background: var(--xenon-gradient) !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

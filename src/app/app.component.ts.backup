@@ -1,0 +1,21 @@
+# Создаем резервную копию
+cp src/app/app.component.ts src/app/app.component.ts.backup
+
+# Создаем минимальный рабочий AppComponent
+cat > src/app/app.component.ts << 'EOF'
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [RouterOutlet],
+  template: `
+    <h1 style="color: #1976d2; padding: 20px;">Xenon Habit Tracker</h1>
+    <div style="padding: 0 20px;">
+      <router-outlet></router-outlet>
+    </div>
+  `
+})
+export class AppComponent {}
+EOF
