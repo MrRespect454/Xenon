@@ -1,146 +1,130 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { HabitRecord } from '../../core/models/habit-record.model';
+import { Habit } from '../../core/models/habit.model';
+import { HabitService } from '../../core/services/habit.service';
+import { HeaderComponent } from '../../shared/components/header/header.component';
 
 @Component({
   selector: 'app-tracker',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, MatButtonModule, MatIconModule, MatMenuModule, HeaderComponent],
   template: `
-    <div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
-      <h2>Трекер привычек</h2>
+    <app-header></app-header>
+    <div class="tracker-page" style="padding: 20px; max-width: 800px; margin: 0 auto;">
       
-      <!-- Навигация по месяцам -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
-        <button mat-raised-button>
-          <mat-icon>chevron_left</mat-icon>
-          Предыдущий месяц
-        </button>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h1 style="margin: 0;">Мой Прогресс</h1>
         
-        <div style="text-align: center;">
-          <h3 style="margin: 0; color: #1976d2;">Январь 2024</h3>
-          <small style="color: #666;">Сегодня: {{ getTodayDate() }}</small>
-        </div>
-        
-        <button mat-raised-button>
-          Следующий месяц
-          <mat-icon>chevron_right</mat-icon>
-        </button>
-      </div>
-      <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: #f0f0f0; padding: 2px; border-radius: 8px;">
-        <div *ngFor="let day of weekDays" style="padding: 15px; text-align: center; font-weight: bold; background: white; border-radius: 4px;">
-          {{ day }}
-        </div>
-        <div *ngFor="let day of getDaysArray()" 
-             style="padding: 15px; min-height: 80px; background: white; border-radius: 4px; cursor: pointer; transition: all 0.2s;"
-             [style.background]="getDayColor(day)"
-             [style.box-shadow]="isToday(day) ? '0 0 0 2px #1976d2' : 'none'"
-             class="day-cell">
-          
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span [style.font-weight]="isToday(day) ? 'bold' : 'normal'">{{ day }}</span>
-            <mat-icon *ngIf="isCompleted(day)" style="color: #4CAF50; font-size: 18px;">check_circle</mat-icon>
-          </div>
-          
-          <!-- Простые индикаторы -->
-          <div style="display: flex; gap: 4px; margin-top: 8px; justify-content: center;">
-            <div *ngFor="let i of [1,2,3]" 
-                 [style.background]="getIndicatorColor(day, i)"
-                 style="width: 12px; height: 12px; border-radius: 50%;">
-            </div>
-          </div>
+        <div style="display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.05); padding: 5px 15px; border-radius: 20px;">
+          <button mat-icon-button (click)="changeMonth(-1)"><mat-icon>chevron_left</mat-icon></button>
+          <span style="font-weight: 600; min-width: 120px; text-align: center; text-transform: capitalize;">
+            {{ viewDate | date:'LLLL yyyy':'':'ru' }}
+          </span>
+          <button mat-icon-button (click)="changeMonth(1)"><mat-icon>chevron_right</mat-icon></button>
         </div>
       </div>
 
-      <!-- Легенда -->
-      <div style="margin-top: 30px; padding: 20px; background: #f5f5f5; border-radius: 8px;">
-        <h4>Легенда:</h4>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 10px;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 20px; height: 20px; background: #E3F2FD; border-radius: 4px;"></div>
-            <span>Сегодняшний день</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <mat-icon style="color: #4CAF50;">check_circle</mat-icon>
-            <span>Все привычки выполнены</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 20px; height: 20px; background: #4CAF50; border-radius: 50%;"></div>
-            <span>Привычка выполнена</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 20px; height: 20px; background: #FF9800; border-radius: 50%;"></div>
-            <span>Часть привычек выполнена</span>
-          </div>
-        </div>
+      <div style="margin-bottom: 25px;">
+        <button mat-flat-button [matMenuTriggerFor]="habitMenu" 
+                style="border-radius: 25px; padding: 0 20px; background: #1976d2; color: white;">
+          <mat-icon>expand_more</mat-icon>
+          {{ selectedHabitName || 'Выберите привычку' }}
+        </button>
+        <mat-menu #habitMenu="matMenu">
+          <button mat-menu-item *ngFor="let h of habits" (click)="selectHabit(h)">
+            <span [style.color]="h.color">●</span> {{ h.name }}
+          </button>
+        </mat-menu>
       </div>
 
-      <!-- Информация -->
-      <div style="margin-top: 20px; padding: 15px; background: #E3F2FD; border-radius: 8px; border-left: 4px solid #1976d2;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <mat-icon>info</mat-icon>
-          <div>
-            <strong>Трекер привычек</strong>
-            <p style="margin: 5px 0 0 0; color: #555;">
-              Календарь показывает выполнение привычек. Кликните на день, чтобы отметить выполнение.
-              В реальном приложении здесь будет подключение к HabitService и диалог для отметки.
-            </p>
+      <div class="calendar-container" [style.background]="(isDark$ | async) ? '#2c2c2c' : 'white'"
+           style="padding: 25px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+        
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; text-align: center; margin-bottom: 15px; font-weight: 700; color: #1976d2;">
+          <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px;">
+          <div *ngFor="let e of emptyDays"></div>
+          <div *ngFor="let day of monthDays" 
+               (click)="toggleDay(day)"
+               [style.background]="isDone(day) ? selectedHabitColor : ((isDark$ | async) ? '#3d3d3d' : '#f5f5f5')"
+               [style.color]="isDone(day) ? 'white' : 'inherit'"
+               [style.opacity]="isFuture(day) ? '0.4' : '1'"
+               [style.cursor]="isFuture(day) ? 'not-allowed' : 'pointer'"
+               style="aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-weight: 600; transition: 0.2s;">
+            {{ day }}
           </div>
         </div>
       </div>
     </div>
-  `,
-  styles: [`
-    .day-cell:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-  `]
+  `
 })
-export class TrackerComponent {
-  weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-  
-  // Примеры выполненных дней для демонстрации
-  completedDays = [5, 10, 15, 20, 25];
-  partiallyCompletedDays = [3, 8, 12, 18, 22];
-  
-  getDaysArray(): number[] {
-    return Array.from({ length: 31 }, (_, i) => i + 1);
+export class TrackerComponent implements OnInit {
+  private habitService = inject(HabitService);
+  isDark$ = this.habitService.isDark$;
+  habits: Habit[] = [];
+  records: HabitRecord[] = [];
+  selectedHabitId: string | null = null;
+  selectedHabitName: string = '';
+  selectedHabitColor: string = '#1976d2';
+
+  viewDate = new Date(); // Дата для отображения месяца
+  monthDays: number[] = [];
+  emptyDays: any[] = [];
+
+  ngOnInit() {
+    this.habitService.habits$.subscribe(h => {
+      this.habits = h;
+      if (h.length > 0 && !this.selectedHabitId) this.selectHabit(h[0]);
+    });
+    this.habitService.records$.subscribe(r => this.records = r);
+    this.generateCalendar();
   }
-  
-  getTodayDate(): string {
+
+  generateCalendar() {
+    const year = this.viewDate.getFullYear();
+    const month = this.viewDate.getMonth();
+    
+    const daysCount = new Date(year, month + 1, 0).getDate();
+    this.monthDays = Array.from({ length: daysCount }, (_, i) => i + 1);
+    
+    let first = new Date(year, month, 1).getDay();
+    first = (first === 0) ? 6 : first - 1;
+    this.emptyDays = Array(first).fill(0);
+  }
+
+  changeMonth(delta: number) {
+    this.viewDate = new Date(this.viewDate.getFullYear(), this.viewDate.getMonth() + delta, 1);
+    this.generateCalendar();
+  }
+
+  isFuture(day: number): boolean {
+    const d = new Date(this.viewDate.getFullYear(), this.viewDate.getMonth(), day);
     const today = new Date();
-    const months = [
-      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
-    ];
-    return `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()}`;
+    today.setHours(0,0,0,0);
+    return d > today;
   }
-  
-  isToday(day: number): boolean {
-    const today = new Date();
-    return today.getDate() === day && today.getMonth() === 0; // Январь
+
+  selectHabit(h: Habit) {
+    this.selectedHabitId = h.id;
+    this.selectedHabitName = h.name;
+    this.selectedHabitColor = h.color;
   }
-  
-  isCompleted(day: number): boolean {
-    return this.completedDays.includes(day);
+
+  toggleDay(day: number) {
+    if (!this.selectedHabitId || this.isFuture(day)) return;
+    
+    const dateKey = `${this.viewDate.getFullYear()}-${(this.viewDate.getMonth()+1).toString().padStart(2,'0')}-${day.toString().padStart(2,'0')}`;
+    this.habitService.toggleCompletion(this.selectedHabitId, dateKey);
   }
-  
-  getDayColor(day: number): string {
-    if (this.completedDays.includes(day)) return '#E8F5E9'; // Зеленый
-    if (this.partiallyCompletedDays.includes(day)) return '#FFF3E0'; // Оранжевый
-    if (this.isToday(day)) return '#E3F2FD'; // Синий
-    return '#ffffff';
-  }
-  
-  getIndicatorColor(day: number, index: number): string {
-    if (this.completedDays.includes(day)) {
-      return ['#4CAF50', '#4CAF50', '#4CAF50'][index - 1]; // Все зеленые
-    }
-    if (this.partiallyCompletedDays.includes(day)) {
-      return ['#4CAF50', '#FF9800', '#F44336'][index - 1]; // Смешанные
-    }
-    return '#e0e0e0'; // Серые
+
+  isDone(day: number): boolean {
+    const dateKey = `${this.viewDate.getFullYear()}-${(this.viewDate.getMonth()+1).toString().padStart(2,'0')}-${day.toString().padStart(2,'0')}`;
+    return this.records.some(r => r.habitId === this.selectedHabitId && r.date === dateKey);
   }
 }

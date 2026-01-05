@@ -1,9 +1,4 @@
-/* You can add global styles to this file, and also import other style files */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
-
-/*html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
-/* Xenon Theme */
 
 :root {
   --xenon-primary: #1976d2;
@@ -21,12 +16,10 @@ body {
   background-color: #fafafa;
 }
 
-/* Material customizations */
 .mat-primary {
   background: var(--xenon-gradient) !important;
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -43,3 +36,48 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+.dark-theme {
+  background-color: #121212 !important;
+  color: #e0e0e0 !important;
+}
+
+.dark-theme .mat-mdc-card {
+  background-color: #1e1e1e !important;
+  color: #e0e0e0 !important;
+}
+
+.dark-theme .day-cell {
+  background-color: #242424 !important;
+  border-color: #333 !important;
+}
+
+.dark-theme .day-cell:hover {
+  background-color: #2d2d2d !important;
+}
+
+/* Стили для календаря трекера */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.day-cell {
+  background: white;
+  border-radius: 8px;
+  min-height: 70px;
+  padding: 8px;
+  cursor: pointer;
+  border: 1px solid #eee;
+  transition: transform 0.2s;
+}
+
+.day-cell:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.dark-theme { background: #121212; color: white; }
+.dark-theme .page-title { color: white; }
+.dark-theme h3 { color: #bb86fc; }

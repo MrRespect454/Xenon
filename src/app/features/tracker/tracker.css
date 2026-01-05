@@ -1,0 +1,26 @@
+.weekday {
+  color: #1976d2; /* В светлой */
+  font-weight: bold;
+  text-align: center;
+}
+
+.dark-theme .weekday {
+  color: #90caf9 !important; 
+}
+
+.dark-theme .day-number {
+  color: #ffffff;
+}
+
+.modern-select {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+/* Дизайн кнопок */
+button {
+  border-radius: 12px;
+  text-transform: none;
+  font-weight: 500;
+  padding: 8px 16px;
+}
