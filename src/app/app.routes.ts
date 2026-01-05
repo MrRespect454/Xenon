@@ -14,6 +14,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/tracker/tracker.component').then(m => m.TrackerComponent)
   },
   {
+  path: 'habits/new',
+  loadComponent: () => import('./features/habits/habit-form/habit-form.component').then(m => m.HabitFormComponent)
+  },
+  {
     path: 'stats',
     loadComponent: () => import('./features/analytics/statistics.component').then(m => m.StatisticsComponent)
   },

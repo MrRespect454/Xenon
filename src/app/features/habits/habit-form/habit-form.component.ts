@@ -1,157 +1,83 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, OnInit, inject } from '@angular/core';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
+import { Habit } from '../../../core/models/habit.model';
+import { DefaultHabitsService } from '../../../core/services/default-habits.service';
+import { HabitService } from '../../../core/services/habit.service';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 
 @Component({
   selector: 'app-habit-form',
   standalone: true,
   imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
+    CommonModule, 
+    ReactiveFormsModule, 
+    FormsModule, 
+    MatFormFieldModule, 
+    MatInputModule, 
+    MatButtonModule, 
+    MatCheckboxModule, 
     MatIconModule,
-    MatSelectModule,
-    MatCheckboxModule,
-    RouterLink,
     HeaderComponent
   ],
   template: `
     <app-header></app-header>
-    
-    <div style="padding: 20px; max-width: 800px; margin: 0 auto;">
-      <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
-        <h2 style="display: flex; align-items: center; gap: 10px; margin-bottom: 30px; color: #1976d2;">
-          <mat-icon>add_circle</mat-icon>
-          Новая привычка
-        </h2>
+    <div class="form-wrapper">
+      <div class="habit-form-card" [class.dark]="(isDark$ | async)">
+        <h1>Новая привычка</h1>
         
+        <p class="label">Готовые идеи:</p>
+        <div class="ideas-row">
+          <button 
+            type="button" 
+            *ngFor="let idea of suggestedHabits" 
+            (click)="applyIdea(idea)" 
+            class="idea-chip">
+            <mat-icon style="font-size: 16px; width: 16px; height: 16px;">{{idea.icon}}</mat-icon>
+            {{idea.name}}
+          </button>
+        </div>
+
         <form [formGroup]="habitForm" (ngSubmit)="onSubmit()">
-          <!-- Название привычки -->
-          <mat-form-field appearance="outline" style="width: 100%; margin-bottom: 20px;">
-            <mat-label>Название привычки *</mat-label>
-            <input matInput formControlName="name" placeholder="Например: Утренняя зарядка" required>
-            <mat-icon matPrefix style="color: #666;">title</mat-icon>
-            <mat-error *ngIf="habitForm.get('name')?.hasError('required')">
-              Название обязательно
-            </mat-error>
-            <mat-error *ngIf="habitForm.get('name')?.hasError('minlength')">
-              Минимум 3 символа
-            </mat-error>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Название привычки</mat-label>
+            <input matInput formControlName="name" placeholder="Напр: Утренняя йога">
           </mat-form-field>
 
-          <!-- Описание -->
-          <mat-form-field appearance="outline" style="width: 100%; margin-bottom: 20px;">
-            <mat-label>Описание (необязательно)</mat-label>
-            <textarea matInput formControlName="description" rows="3" 
-                      placeholder="Опишите вашу привычку, почему она важна, как ее выполнять..."></textarea>
-            <mat-icon matPrefix style="color: #666;">description</mat-icon>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Описание</mat-label>
+            <textarea matInput formControlName="description" placeholder="Добавьте детали..."></textarea>
           </mat-form-field>
 
-          <!-- Цвет -->
-          <div style="margin-bottom: 30px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #444;">Цвет привычки</label>
-            <mat-form-field appearance="outline" style="width: 100%;">
-              <mat-select formControlName="color">
-                <mat-option value="#4CAF50">
-                  <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 20px; height: 20px; background: #4CAF50; border-radius: 4px;"></div>
-                    <span>Зеленый (спорт, здоровье)</span>
-                  </div>
-                </mat-option>
-                <mat-option value="#2196F3">
-                  <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 20px; height: 20px; background: #2196F3; border-radius: 4px;"></div>
-                    <span>Синий (развитие, учеба)</span>
-                  </div>
-                </mat-option>
-                <mat-option value="#FF9800">
-                  <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 20px; height: 20px; background: #FF9800; border-radius: 4px;"></div>
-                    <span>Оранжевый (творчество, хобби)</span>
-                  </div>
-                </mat-option>
-                <mat-option value="#9C27B0">
-                  <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 20px; height: 20px; background: #9C27B0; border-radius: 4px;"></div>
-                    <span>Фиолетовый (медитация, отдых)</span>
-                  </div>
-                </mat-option>
-              </mat-select>
-              <mat-icon matPrefix style="color: #666;">palette</mat-icon>
-            </mat-form-field>
+          <div class="color-row">
+            <span>Цвет маркера:</span>
+            <input type="color" formControlName="color" class="color-input">
           </div>
 
-          <!-- Дни недели -->
-          <div style="margin-bottom: 30px;">
-            <label style="display: block; margin-bottom: 15px; font-weight: 500; color: #444;">
-              <mat-icon style="vertical-align: middle; margin-right: 8px;">event</mat-icon>
-              Дни выполнения
-            </label>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
-              <mat-checkbox formControlName="monday" style="margin: 0;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <mat-icon>looks_one</mat-icon>
-                  Понедельник
-                </div>
-              </mat-checkbox>
-              <mat-checkbox formControlName="tuesday">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <mat-icon>looks_two</mat-icon>
-                  Вторник
-                </div>
-              </mat-checkbox>
-              <mat-checkbox formControlName="wednesday">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <mat-icon>looks_3</mat-icon>
-                  Среда
-                </div>
-              </mat-checkbox>
-              <mat-checkbox formControlName="thursday">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <mat-icon>looks_4</mat-icon>
-                  Четверг
-                </div>
-              </mat-checkbox>
-              <mat-checkbox formControlName="friday">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <mat-icon>looks_5</mat-icon>
-                  Пятница
-                </div>
-              </mat-checkbox>
-              <mat-checkbox formControlName="saturday">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <mat-icon>looks_6</mat-icon>
-                  Суббота
-                </div>
-              </mat-checkbox>
-              <mat-checkbox formControlName="sunday">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <mat-icon>weekend</mat-icon>
-                  Воскресенье
-                </div>
-              </mat-checkbox>
+          <div class="days-container">
+            <p class="label">Дни выполнения:</p>
+            <div class="days-grid">
+              <mat-checkbox formControlName="Пн">Пн</mat-checkbox>
+              <mat-checkbox formControlName="Вт">Вт</mat-checkbox>
+              <mat-checkbox formControlName="Ср">Ср</mat-checkbox>
+              <mat-checkbox formControlName="Чт">Чт</mat-checkbox>
+              <mat-checkbox formControlName="Пт">Пт</mat-checkbox>
+              <mat-checkbox formControlName="Сб">Сб</mat-checkbox>
+              <mat-checkbox formControlName="Вс">Вс</mat-checkbox>
             </div>
           </div>
 
-          <!-- Кнопки -->
-          <div style="display: flex; gap: 15px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-            <button mat-raised-button color="primary" type="submit" [disabled]="!habitForm.valid" 
-                    style="flex: 1; padding: 12px;">
-              <mat-icon>check_circle</mat-icon>
-              Создать привычку
+          <div class="form-actions">
+            <button mat-flat-button color="primary" type="submit" [disabled]="habitForm.invalid">
+              Создать
             </button>
-            <button mat-stroked-button type="button" routerLink="/habits" style="flex: 1; padding: 12px;">
-              <mat-icon>close</mat-icon>
+            <button mat-stroked-button type="button" (click)="onCancel()">
               Отмена
             </button>
           </div>
@@ -160,81 +86,134 @@ import { HeaderComponent } from '../../../shared/components/header/header.compon
     </div>
   `,
   styles: [`
-    mat-form-field {
-      width: 100%;
+    .form-wrapper { padding: 40px 20px; display: flex; justify-content: center; }
+    .habit-form-card { 
+      width: 100%; 
+      max-width: 500px; 
+      background: white; 
+      padding: 30px; 
+      border-radius: 24px; 
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08); 
     }
+    .habit-form-card.dark { background: #2c2c2c; color: white; }
+    h1 { font-size: 24px; margin-bottom: 20px; font-weight: 700; }
+    .full-width { width: 100%; margin-bottom: 10px; }
+    
+    .ideas-row { 
+      display: flex; 
+      gap: 10px; 
+      margin-bottom: 25px; 
+      overflow-x: auto; 
+      padding: 5px 0;
+      scrollbar-width: thin;
+    }
+    .idea-chip { 
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto; 
+      border: 1px solid #e0e0e0; 
+      background: #fafafa; 
+      border-radius: 12px; 
+      padding: 8px 15px; 
+      cursor: pointer; 
+      font-size: 13px; 
+      transition: all 0.2s;
+    }
+    .idea-chip:hover { background: #f0f0f0; border-color: #ccc; }
+    .dark .idea-chip { background: #3d3d3d; border-color: #444; color: #ccc; }
+    
+    .label { font-weight: 600; font-size: 14px; margin-bottom: 8px; opacity: 0.8; }
+    .color-row { display: flex; align-items: center; gap: 15px; margin: 15px 0; }
+    .color-input { border: none; width: 40px; height: 40px; cursor: pointer; border-radius: 50%; padding: 0; background: none; }
+    
+    .days-grid { 
+      display: grid; 
+      grid-template-columns: repeat(4, 1fr); 
+      gap: 10px; 
+      margin-bottom: 25px; 
+    }
+    .form-actions { display: flex; gap: 12px; }
+    .form-actions button { flex: 1; height: 48px; border-radius: 14px; font-weight: 600; }
   `]
 })
-export class HabitFormComponent {
+export class HabitFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
-  
+  private habitService = inject(HabitService);
+  private defaultHabitsService = inject(DefaultHabitsService);
+
+  isDark$ = this.habitService.isDark$;
+  suggestedHabits: Omit<Habit, 'id' | 'creationDate'>[] = [];
+
+  // Инициализируем форму с русскими ключами
   habitForm = this.fb.group({
-    name: ['', [Validators.required, Validators.minLength(3)]],
+    name: ['', [Validators.required, Validators.minLength(2)]],
     description: [''],
-    color: ['#4CAF50'],
-    monday: [true],
-    tuesday: [true],
-    wednesday: [true],
-    thursday: [true],
-    friday: [true],
-    saturday: [false],
-    sunday: [false]
+    color: ['#1976d2'],
+    icon: ['circle'],
+    'Пн': [false],
+    'Вт': [false],
+    'Ср': [false],
+    'Чт': [false],
+    'Пт': [false],
+    'Сб': [false],
+    'Вс': [false]
   });
+
+  ngOnInit() {
+    // Получаем 4 случайные идеи из вашего нового сервиса
+    this.suggestedHabits = this.defaultHabitsService.getRandomHabits(4);
+  }
+
+  applyIdea(idea: Omit<Habit, 'id' | 'creationDate'>) {
+    // 1. Сначала сбрасываем все дни в false
+    const resetDays: any = {};
+    ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].forEach(d => resetDays[d] = false);
+    
+    // 2. Устанавливаем дни из идеи
+    if (idea.targetDays && Array.isArray(idea.targetDays)) {
+      idea.targetDays.forEach(day => {
+        if (resetDays.hasOwnProperty(day)) {
+          resetDays[day] = true;
+        }
+      });
+    }
+
+    // 3. Патчим форму данными из DefaultHabitsService
+    this.habitForm.patchValue({
+      name: idea.name,
+      description: idea.description,
+      color: idea.color,
+      icon: idea.icon || 'circle',
+      ...resetDays
+    });
+  }
 
   onSubmit() {
     if (this.habitForm.valid) {
-      const formValue = this.habitForm.value;
+      const val = this.habitForm.getRawValue();
+      const allDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
       
-      // Собираем дни недели
-      const targetDays: string[] = [];
-      const dayMap = {
-        monday: 'Mon',
-        tuesday: 'Tue', 
-        wednesday: 'Wed',
-        thursday: 'Thu',
-        friday: 'Fri',
-        saturday: 'Sat',
-        sunday: 'Sun'
+      // Собираем массив строк ["Пн", "Ср"] на основе выбранных чекбоксов
+      const selectedDays = allDays.filter(day => (val as any)[day] === true);
+
+      const newHabit: Habit = {
+        id: Date.now().toString(),
+        name: val.name!,
+        description: val.description || '',
+        color: val.color || '#1976d2',
+        icon: val.icon || 'circle',
+        targetDays: selectedDays,
+        creationDate: new Date()
       };
-      
-      Object.entries(dayMap).forEach(([formKey, dayCode]) => {
-        if (formValue[formKey as keyof typeof formValue]) {
-          targetDays.push(dayCode);
-        }
-      });
-      
-      // Если выбраны все дни - отмечаем как ежедневно
-      const finalTargetDays = targetDays.length === 7 ? ['daily'] : targetDays;
-      
-      // Создаем новую привычку
-      const newHabit = {
-        id: 'habit_' + Date.now(),
-        name: formValue.name!,
-        description: formValue.description || '',
-        color: formValue.color!,
-        targetDays: finalTargetDays,
-        creationDate: new Date().toISOString()
-      };
-      
-      // Сохраняем в localStorage
-      this.saveHabit(newHabit);
-      
-      // Перенаправляем на главную страницу
+
+      this.habitService.addHabit(newHabit);
       this.router.navigate(['/habits']);
     }
   }
 
-  private saveHabit(habit: any): void {
-    try {
-      const storedHabits = localStorage.getItem('xenon_habits');
-      const habits = storedHabits ? JSON.parse(storedHabits) : [];
-      habits.push(habit);
-      localStorage.setItem('xenon_habits', JSON.stringify(habits));
-      
-      console.log('Привычка сохранена:', habit);
-    } catch (error) {
-      console.error('Ошибка сохранения привычки:', error);
-    }
+  onCancel() {
+    this.router.navigate(['/habits']);
   }
 }
